@@ -1,10 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
-export default function Tab2Screen() {
+export default function ChatScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>Tab 2</Text>
+      <Text style={styles.text}>Chat with AI</Text>
     </View>
   );
 }
