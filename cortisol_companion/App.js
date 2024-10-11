@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from './firebaseConfig';
 
 import HomeScreen from './home_tab/Home';
 import ChartScreen from './chart_tab/chart';
@@ -13,6 +15,21 @@ import ChatScreen from './chat_tab/Chat';
 const Tab = createBottomTabNavigator();
 
 export default function App() {
+  const [user, setUser] = useState(null);
+  const [initializing, setInitializing] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
+      if (initializing) setInitializing(false);
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, []);
+
+  if (initializing) return null;
+
   return (
     <NavigationContainer theme={{
       dark: true,
@@ -61,12 +78,14 @@ export default function App() {
           name="Chat" 
           component={ChatScreen} 
           options={{ 
-            title: 'Chat with AI', // top bar screen title
-            tabBarLabel: 'Chat' }} // bottom tab icon label
+            title: 'Chat with AI',
+            tabBarLabel: 'Chat' }}
         />
         <Tab.Screen name="Home" component={HomeScreen} />
         <Tab.Screen name="Progress" component={ChartScreen} />
-        <Tab.Screen name="Profile" component={ProfileScreen} />
+        <Tab.Screen name="Profile">
+          {(props) => <ProfileScreen {...props} user={user} />}
+        </Tab.Screen>
       </Tab.Navigator>
     </NavigationContainer>
   );
