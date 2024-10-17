@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated, Dimensions } from 'react-native';
+import { Svg, Circle } from 'react-native-svg';
+import { Ionicons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
 
@@ -14,7 +16,30 @@ const CustomCheckbox = ({ status, onPress }) => (
   </TouchableOpacity>
 );
 
-export default function HomeScreen() {
+const PieChart = ({ percentage }) => {
+  const radius = 40;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+
+  return (
+    <Svg height="100" width="100" viewBox="0 0 100 100">
+      <Circle
+        cx="50"
+        cy="50"
+        r={radius}
+        fill="transparent"
+        stroke="#4CAF50"
+        strokeWidth="10"
+        strokeDasharray={circumference}
+        strokeDashoffset={strokeDashoffset}
+        strokeLinecap="round"
+        transform="rotate(-90 50 50)"
+      />
+    </Svg>
+  );
+};
+
+export default function HomeScreen({ navigation }) {
   const [tasks, setTasks] = useState([
     { id: '1', title: 'Morning meditation', completed: false },
     { id: '2', title: 'Take medication', completed: false },
@@ -55,6 +80,8 @@ export default function HomeScreen() {
     }
   };
 
+  const completedPercentage = (tasks.filter(task => task.completed).length / tasks.length) * 100;
+
   return (
     <View style={styles.container}>
       <View style={styles.tileContainer}>
@@ -73,10 +100,24 @@ export default function HomeScreen() {
             </View>
           ))}
         </ScrollView>
+        <TouchableOpacity style={styles.manageButton} onPress={toggleMenu}>
+          <Text style={styles.manageButtonText}>Manage Tasks</Text>
+        </TouchableOpacity>
       </View>
-      <TouchableOpacity style={styles.manageButton} onPress={toggleMenu}>
-        <Text style={styles.manageButtonText}>Manage Tasks &gt;</Text>
-      </TouchableOpacity>
+      
+      <View style={styles.squareCardContainer}>
+        <View style={styles.squareCard}>
+          <Text style={styles.squareCardTitle}>Streak</Text>
+          <Text style={styles.squareCardContent}>7 Days</Text>
+        </View>
+        <TouchableOpacity 
+          style={styles.squareCard}
+          onPress={() => navigation.navigate('ExpandedProgress', { percentage: completedPercentage })}
+        >
+          <Text style={styles.squareCardTitle}>Progress</Text>
+          <PieChart percentage={completedPercentage} />
+        </TouchableOpacity>
+      </View>
 
       <Animated.View style={[
         styles.slideMenu,
@@ -103,7 +144,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     margin: 20,
     padding: 20,
-    height: '36%',
+    height: '50%',
   },
   tileTitle: {
     color: 'white',
@@ -131,9 +172,8 @@ const styles = StyleSheet.create({
   manageButton: {
     alignSelf: 'flex-end',
     paddingHorizontal: 15,
-    paddingVertical: 0,
-    marginRight: 20,
-    marginTop: -10, // Move the button up
+    paddingVertical: 10,
+    marginTop: 10,
   },
   manageButtonText: {
     color: '#3498db',
@@ -186,5 +226,31 @@ const styles = StyleSheet.create({
     height: 12,
     backgroundColor: 'white',
     borderRadius: 2,
+  },
+  squareCardContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginHorizontal: 20,
+    marginBottom: 20,
+  },
+  squareCard: {
+    backgroundColor: '#333',
+    borderRadius: 20,
+    padding: 15,
+    width: '48%',
+    aspectRatio: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  squareCardTitle: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  squareCardContent: {
+    color: 'white',
+    fontSize: 24,
+    fontWeight: 'bold',
   },
 });
