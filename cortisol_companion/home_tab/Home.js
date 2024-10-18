@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated, Dimensions } from 'react-native';
 import { Svg, Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
+import { useSelector, useDispatch } from 'react-redux';
+import { toggleTask } from '../store';
+
 
 const { width } = Dimensions.get('window');
 
@@ -40,28 +43,10 @@ const PieChart = ({ percentage }) => {
 };
 
 export default function HomeScreen({ navigation }) {
-  const [tasks, setTasks] = useState([
-    { id: '1', title: 'Morning meditation', completed: false },
-    { id: '2', title: 'Take medication', completed: false },
-    { id: '3', title: 'Exercise for 30 minutes', completed: false },
-    { id: '4', title: 'Eat a balanced meal', completed: false },
-    { id: '5', title: 'Practice deep breathing', completed: false },
-  ]);
-
+  const tasks = useSelector((state) => state.tasks);  // Access tasks from Redux store
+  const dispatch = useDispatch();
   const [slideAnim] = useState(new Animated.Value(width));
   const [menuOpen, setMenuOpen] = useState(false);
-
-  const toggleTask = (id) => {
-    setTasks(prevTasks => {
-      const updatedTasks = prevTasks.map(task =>
-        task.id === id ? { ...task, completed: !task.completed } : task
-      );
-      return [
-        ...updatedTasks.filter(task => !task.completed),
-        ...updatedTasks.filter(task => task.completed),
-      ];
-    });
-  };
 
   const toggleMenu = () => {
     if (menuOpen) {
@@ -91,7 +76,7 @@ export default function HomeScreen({ navigation }) {
             <View key={task.id} style={styles.taskItem}>
               <CustomCheckbox
                 status={task.completed ? 'checked' : 'unchecked'}
-                onPress={() => toggleTask(task.id)}
+                onPress={() => dispatch(toggleTask(task.id))}  // Dispatch action to toggle task
               />
               <Text style={[
                 styles.taskText,
@@ -127,7 +112,6 @@ export default function HomeScreen({ navigation }) {
           <Text style={styles.backButtonText}>&lt; Back</Text>
         </TouchableOpacity>
         <Text style={styles.menuTitle}>Manage Tasks</Text>
-        {/* Add task management options here */}
       </Animated.View>
     </View>
   );
