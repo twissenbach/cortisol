@@ -1,39 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import React from 'react';
+import { View, Text, Button, StyleSheet, Alert } from 'react-native';
 import { auth } from '../firebaseConfig';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
+import { signOut } from 'firebase/auth';
 
 export default function ProfileScreen({ user }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLogin, setIsLogin] = useState(false);
-
-  useEffect(() => {
-    if (user) {
-      setEmail(user.email);
-    }
-  }, [user]);
-
-  const handleLogin = () => {
-    signInWithEmailAndPassword(auth, email, password)
-      .then(userCredential => {
-        Alert.alert("Logged in!", `Welcome back ${userCredential.user.email}`);
-      })
-      .catch(error => {
-        Alert.alert("Login Error", error.message);
-      });
-  };
-
-  const handleSignUp = () => {
-    createUserWithEmailAndPassword(auth, email, password)
-      .then(userCredential => {
-        Alert.alert("Sign Up Successful!", `Welcome ${userCredential.user.email}`);
-      })
-      .catch(error => {
-        Alert.alert("Sign Up Error", error.message);
-      });
-  };
-
   const handleSignOut = () => {
     signOut(auth)
       .then(() => {
@@ -44,49 +14,10 @@ export default function ProfileScreen({ user }) {
       });
   };
 
-  if (user) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.text}>Welcome, {user.email}</Text>
-        <Button title="Sign Out" onPress={handleSignOut} color="white" />
-      </View>
-    );
-  }
-
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>{isLogin ? 'Sign In' : 'Create Account'}</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        placeholderTextColor="gray"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        placeholderTextColor="gray"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
-      <Button
-        title={isLogin ? "Login" : "Sign Up"}
-        onPress={isLogin ? handleLogin : handleSignUp}
-        color="white"
-      />
-      <View style={styles.switchContainer}>
-        <Text style={styles.switchText}>
-          {isLogin ? "New? Sign Up" : "Already have an account? Log in"}
-        </Text>
-        <Button
-          title={isLogin ? "Sign Up" : "Log in"}
-          onPress={() => setIsLogin(!isLogin)}
-          color="gray"
-        />
-      </View>
+      <Text style={styles.text}>Welcome, {user.email}</Text>
+      <Button title="Sign Out" onPress={handleSignOut} color="white" />
     </View>
   );
 }
@@ -103,21 +34,5 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 24,
     marginBottom: 20,
-  },
-  input: {
-    width: '100%',
-    backgroundColor: '#333',
-    padding: 10,
-    marginBottom: 10,
-    color: 'white',
-    borderRadius: 5,
-  },
-  switchContainer: {
-    marginTop: 20,
-    alignItems: 'center',
-  },
-  switchText: {
-    color: 'white',
-    marginBottom: 10,
   },
 });

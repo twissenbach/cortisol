@@ -12,6 +12,7 @@ import HomeScreen from './home_tab/Home';
 import ExpandedProgress from './home_tab/ExpandedProgress';
 import ProfileScreen from './profile_tab/Profile';
 import ChatScreen from './chat_tab/Chat';
+import SignInSignUpScreen from './profile_tab/SignInSignUp'; // Import the SignIn/SignUp screen
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -53,41 +54,42 @@ export default function App() {
           notification: 'white',
         },
       }}>
-        <Tab.Navigator
-          screenOptions={({ route }) => ({
-            tabBarIcon: ({ focused, color, size }) => {
-              let iconName;
+        {user ? (
+          <Tab.Navigator
+            screenOptions={({ route }) => ({
+              tabBarIcon: ({ focused, color, size }) => {
+                let iconName;
 
-              if (route.name === 'Home') {
-                iconName = focused ? 'home' : 'home-outline';
-              } else if (route.name === 'Profile') {
-                iconName = focused ? 'person' : 'person-outline';
-              } else if (route.name === 'Chat') {
-                iconName = focused ? 'chatbubble' : 'chatbubble-outline';
-              }
+                if (route.name === 'Home') {
+                  iconName = focused ? 'home' : 'home-outline';
+                } else if (route.name === 'Profile') {
+                  iconName = focused ? 'person' : 'person-outline';
+                } else if (route.name === 'Chat') {
+                  iconName = focused ? 'chatbubble' : 'chatbubble-outline';
+                }
 
-              return <Ionicons name={iconName} size={size} color={color} />;
-            },
-            tabBarActiveTintColor: 'white',
-            tabBarInactiveTintColor: 'gray',
-            tabBarStyle: { backgroundColor: 'black', borderTopColor: '#333' },
-            headerStyle: { backgroundColor: 'black' },
-            headerTintColor: 'white',
-            headerTitleAlign: 'center',
-          })}
-        >
-          <Tab.Screen 
-            name="Chat" 
-            component={ChatScreen} 
-            options={{ 
-              title: 'Chat with AI',
-              tabBarLabel: 'Chat' }}
-          />
-          <Tab.Screen name="Home" component={HomeStack} />
-          <Tab.Screen name="Profile">
-            {(props) => <ProfileScreen {...props} user={user} />}
-          </Tab.Screen>
-        </Tab.Navigator>
+                return <Ionicons name={iconName} size={size} color={color} />;
+              },
+              tabBarActiveTintColor: 'white',
+              tabBarInactiveTintColor: 'gray',
+              tabBarStyle: { backgroundColor: 'black', borderTopColor: '#333' },
+              headerStyle: { backgroundColor: 'black' },
+              headerTintColor: 'white',
+              headerTitleAlign: 'center',
+            })}
+          >
+            <Tab.Screen name="Chat" component={ChatScreen} options={{ title: 'Chat with AI', tabBarLabel: 'Chat' }} />
+            <Tab.Screen name="Home" component={HomeStack} />
+            <Tab.Screen name="Profile">
+              {(props) => <ProfileScreen {...props} user={user} />}
+            </Tab.Screen>
+          </Tab.Navigator>
+        ) : (
+          // If not authenticated, show the login/signup screen
+          <Stack.Navigator screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="SignInSignUp" component={SignInSignUpScreen} />
+          </Stack.Navigator>
+        )}
       </NavigationContainer>
     </Provider>
   );
