@@ -1,31 +1,101 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState, useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  FlatList,
+  Animated,
+  PanResponder,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSelector, useDispatch } from 'react-redux';
-import { toggleTask } from '../store';
-
-const CustomCheckbox = ({ status, onPress }) => (
-  <TouchableOpacity onPress={onPress}>
-    <View style={[
-      styles.checkbox,
-      status === 'checked' && styles.checkboxChecked
-    ]}>
-      {status === 'checked' && (
-        <Ionicons name="checkmark" size={18} color="#4CAF50" />
-      )}
-    </View>
-  </TouchableOpacity>
-);
+import { updateTaskOrder, deleteTask } from '../store';
 
 export default function ExpandedManageTasks({ navigation }) {
   const tasks = useSelector((state) => state.tasks);
   const dispatch = useDispatch();
+  const [draggingIndex, setDraggingIndex] = useState(null);
+  
+  // Create a pan for the entire list instead of per item
+  const pan = useRef(new Animated.ValueXY()).current;
+  
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {
+        pan.setOffset({
+          x: 0,
+          y: 0,
+        });
+      },
+      onPanResponderMove: Animated.event(
+        [null, { dy: pan.y }],
+        { useNativeDriver: false }
+      ),
+      onPanResponderRelease: (_, gestureState) => {
+        pan.flattenOffset();
+        if (draggingIndex !== null) {
+          const newIndex = Math.floor(
+            draggingIndex + gestureState.dy / 60
+          );
+          if (
+            newIndex !== draggingIndex && 
+            newIndex >= 0 && 
+            newIndex < tasks.length
+          ) {
+            const newTasks = [...tasks];
+            const item = newTasks.splice(draggingIndex, 1)[0];
+            newTasks.splice(newIndex, 0, item);
+            dispatch(updateTaskOrder(newTasks));
+          }
+          setDraggingIndex(null);
+        }
+        Animated.spring(pan, {
+          toValue: { x: 0, y: 0 },
+          useNativeDriver: false,
+        }).start();
+      },
+    })
+  ).current;
 
-  // Sort tasks so completed ones are at the bottom
-  const sortedTasks = [...tasks].sort((a, b) => {
-    if (a.completed === b.completed) return 0;
-    return a.completed ? 1 : -1;
-  });
+  const renderItem = ({ item, index }) => {
+    return (
+      <Animated.View
+        style={[
+          styles.taskItem,
+          draggingIndex === index && {
+            transform: [{ translateY: pan.y }],
+            elevation: 5,
+            shadowOpacity: 0.2,
+          },
+        ]}
+      >
+        <TouchableOpacity
+          onPressIn={() => {
+            setDraggingIndex(index);
+          }}
+          {...panResponder.panHandlers}
+        >
+          <Ionicons 
+            name="menu" 
+            size={24} 
+            color="#666"
+            style={styles.dragHandle}
+          />
+        </TouchableOpacity>
+        
+        <Text style={styles.taskText}>{item.title}</Text>
+        
+        <TouchableOpacity 
+          style={styles.deleteButton}
+          onPress={() => dispatch(deleteTask(item.id))}
+        >
+          <Ionicons name="trash-outline" size={24} color="#FF4444" />
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -38,34 +108,18 @@ export default function ExpandedManageTasks({ navigation }) {
       
       <Text style={styles.title}>Manage Tasks</Text>
       
-      <ScrollView style={styles.taskList}>
-        {sortedTasks.map(task => (
-          <View key={task.id} style={styles.taskItem}>
-            <CustomCheckbox
-              status={task.completed ? 'checked' : 'unchecked'}
-              onPress={() => dispatch(toggleTask(task.id))}
-            />
-            <Text style={[
-              styles.taskText,
-              task.completed && styles.completedTaskText
-            ]}>{task.title}</Text>
-            <TouchableOpacity 
-              style={styles.deleteButton}
-              onPress={() => {
-                // Add delete task action here when ready
-                // dispatch(deleteTask(task.id))
-              }}
-            >
-              <Ionicons name="trash-outline" size={24} color="#FF4444" />
-            </TouchableOpacity>
-          </View>
-        ))}
-      </ScrollView>
+      <FlatList
+        data={tasks}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.taskList}
+        scrollEnabled={draggingIndex === null}
+      />
 
       <TouchableOpacity 
         style={styles.addButton}
         onPress={() => {
-          // Add new task action here when ready
+          // Add new task action here
           // navigation.navigate('AddTask')
         }}
       >
@@ -96,7 +150,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   taskList: {
-    flex: 1,
     paddingHorizontal: 20,
   },
   taskItem: {
@@ -106,35 +159,18 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 15,
     marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 3.84,
   },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: '#white',
-    marginRight: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'transparent',
-  },
-  checkboxChecked: {
-    backgroundColor: '#transparent',
-  },
-  checkmark: {
-    width: 12,
-    height: 12,
-    backgroundColor: 'white',
-    borderRadius: 6,
+  dragHandle: {
+    marginRight: 15,
+    opacity: 0.7,
   },
   taskText: {
     color: 'white',
     fontSize: 16,
     flex: 1,
-  },
-  completedTaskText: {
-    textDecorationLine: 'line-through',
-    color: '#888',
   },
   deleteButton: {
     padding: 5,

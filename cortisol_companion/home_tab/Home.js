@@ -49,8 +49,13 @@ export default function HomeScreen({ navigation }) {
   
   // Sort tasks so completed ones are at the bottom
   const sortedTasks = [...tasks].sort((a, b) => {
-    if (a.completed === b.completed) return 0;
-    return a.completed ? 1 : -1;
+    // First, move completed tasks to the bottom
+    if (a.completed !== b.completed) {
+      return a.completed ? 1 : -1;
+    }
+    // For tasks with the same completion status, maintain their order
+    // This assumes tasks array maintains the order from ExpandedManageTasks
+    return 0;
   });
   
   const completedPercentage = (tasks.filter(task => task.completed).length / tasks.length) * 100;
