@@ -1,104 +1,56 @@
-import React, { useState, useRef } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  FlatList,
-  Animated,
-  PanResponder,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSelector, useDispatch } from 'react-redux';
 import { updateTaskOrder, deleteTask } from '../store';
+import DraggableFlatList, {
+  ScaleDecorator,
+} from 'react-native-draggable-flatlist';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 export default function ExpandedManageTasks({ navigation }) {
   const tasks = useSelector((state) => state.tasks);
   const dispatch = useDispatch();
-  const [draggingIndex, setDraggingIndex] = useState(null);
-  
-  // Create a pan for the entire list instead of per item
-  const pan = useRef(new Animated.ValueXY()).current;
-  
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onPanResponderGrant: () => {
-        pan.setOffset({
-          x: 0,
-          y: 0,
-        });
-      },
-      onPanResponderMove: Animated.event(
-        [null, { dy: pan.y }],
-        { useNativeDriver: false }
-      ),
-      onPanResponderRelease: (_, gestureState) => {
-        pan.flattenOffset();
-        if (draggingIndex !== null) {
-          const newIndex = Math.floor(
-            draggingIndex + gestureState.dy / 60
-          );
-          if (
-            newIndex !== draggingIndex && 
-            newIndex >= 0 && 
-            newIndex < tasks.length
-          ) {
-            const newTasks = [...tasks];
-            const item = newTasks.splice(draggingIndex, 1)[0];
-            newTasks.splice(newIndex, 0, item);
-            dispatch(updateTaskOrder(newTasks));
-          }
-          setDraggingIndex(null);
-        }
-        Animated.spring(pan, {
-          toValue: { x: 0, y: 0 },
-          useNativeDriver: false,
-        }).start();
-      },
-    })
-  ).current;
 
-  const renderItem = ({ item, index }) => {
+  const renderItem = ({ item, drag, isActive }) => {
     return (
-      <Animated.View
-        style={[
+      <ScaleDecorator>
+        <View style={[
           styles.taskItem,
-          draggingIndex === index && {
-            transform: [{ translateY: pan.y }],
-            elevation: 5,
-            shadowOpacity: 0.2,
-          },
-        ]}
-      >
-        <TouchableOpacity
-          onPressIn={() => {
-            setDraggingIndex(index);
-          }}
-          {...panResponder.panHandlers}
-        >
-          <Ionicons 
-            name="menu" 
-            size={24} 
-            color="#666"
-            style={styles.dragHandle}
-          />
-        </TouchableOpacity>
-        
-        <Text style={styles.taskText}>{item.title}</Text>
-        
-        <TouchableOpacity 
-          style={styles.deleteButton}
-          onPress={() => dispatch(deleteTask(item.id))}
-        >
-          <Ionicons name="trash-outline" size={24} color="#FF4444" />
-        </TouchableOpacity>
-      </Animated.View>
+          isActive && styles.draggingItem
+        ]}>
+          <TouchableOpacity 
+            onPressIn={drag}
+            style={styles.dragHandleContainer}
+          >
+            <Ionicons 
+              name="menu" 
+              size={24} 
+              color="#666"
+              style={styles.dragHandle}
+            />
+          </TouchableOpacity>
+          
+          <Text style={styles.taskText}>{item.title}</Text>
+          
+          <TouchableOpacity 
+            style={styles.deleteButton}
+            onPress={() => dispatch(deleteTask(item.id))}
+          >
+            <Ionicons name="trash-outline" size={24} color="#FF4444" />
+          </TouchableOpacity>
+        </View>
+      </ScaleDecorator>
     );
   };
 
   return (
-    <View style={styles.container}>
+    <GestureHandlerRootView style={styles.container}>
       <TouchableOpacity 
         style={styles.backButton} 
         onPress={() => navigation.goBack()}
@@ -108,12 +60,12 @@ export default function ExpandedManageTasks({ navigation }) {
       
       <Text style={styles.title}>Manage Tasks</Text>
       
-      <FlatList
+      <DraggableFlatList
         data={tasks}
-        renderItem={renderItem}
+        onDragEnd={({ data }) => dispatch(updateTaskOrder(data))}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.taskList}
-        scrollEnabled={draggingIndex === null}
+        renderItem={renderItem}
+        containerStyle={styles.taskList}
       />
 
       <TouchableOpacity 
@@ -126,7 +78,7 @@ export default function ExpandedManageTasks({ navigation }) {
         <Ionicons name="add" size={24} color="white" />
         <Text style={styles.addButtonText}>Add New Task</Text>
       </TouchableOpacity>
-    </View>
+    </GestureHandlerRootView>
   );
 }
 
@@ -163,14 +115,26 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 3.84,
   },
+  draggingItem: {
+    backgroundColor: '#444',
+    elevation: 5,
+    shadowOpacity: 0.3,
+  },
+  dragHandleContainer: {
+    padding: 5,
+    marginRight: 10,
+    width: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   dragHandle: {
-    marginRight: 15,
     opacity: 0.7,
   },
   taskText: {
     color: 'white',
     fontSize: 16,
     flex: 1,
+    paddingHorizontal: 10,
   },
   deleteButton: {
     padding: 5,
