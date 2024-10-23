@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated, Dimensions } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { Svg, Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { useSelector, useDispatch } from 'react-redux';
 import { toggleTask } from '../store';
-
 
 const { width } = Dimensions.get('window');
 
@@ -14,7 +13,9 @@ const CustomCheckbox = ({ status, onPress }) => (
       styles.checkbox,
       status === 'checked' && styles.checkboxChecked
     ]}>
-      {status === 'checked' && <View style={styles.checkmark} />}
+      {status === 'checked' && (
+        <Ionicons name="checkmark" size={18} color="#4CAF50" />
+      )}
     </View>
   </TouchableOpacity>
 );
@@ -43,28 +44,15 @@ const PieChart = ({ percentage }) => {
 };
 
 export default function HomeScreen({ navigation }) {
-  const tasks = useSelector((state) => state.tasks);  // Access tasks from Redux store
+  const tasks = useSelector((state) => state.tasks);
   const dispatch = useDispatch();
-  const [slideAnim] = useState(new Animated.Value(width));
-  const [menuOpen, setMenuOpen] = useState(false);
-
-  const toggleMenu = () => {
-    if (menuOpen) {
-      Animated.timing(slideAnim, {
-        toValue: width,
-        duration: 300,
-        useNativeDriver: true,
-      }).start(() => setMenuOpen(false));
-    } else {
-      setMenuOpen(true);
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
-    }
-  };
-
+  
+  // Sort tasks so completed ones are at the bottom
+  const sortedTasks = [...tasks].sort((a, b) => {
+    if (a.completed === b.completed) return 0;
+    return a.completed ? 1 : -1;
+  });
+  
   const completedPercentage = (tasks.filter(task => task.completed).length / tasks.length) * 100;
 
   return (
@@ -72,11 +60,11 @@ export default function HomeScreen({ navigation }) {
       <View style={styles.tileContainer}>
         <Text style={styles.tileTitle}>Daily Tasks</Text>
         <ScrollView style={styles.taskList}>
-          {tasks.map(task => (
+          {sortedTasks.map(task => (
             <View key={task.id} style={styles.taskItem}>
               <CustomCheckbox
                 status={task.completed ? 'checked' : 'unchecked'}
-                onPress={() => dispatch(toggleTask(task.id))}  // Dispatch action to toggle task
+                onPress={() => dispatch(toggleTask(task.id))}
               />
               <Text style={[
                 styles.taskText,
@@ -85,7 +73,10 @@ export default function HomeScreen({ navigation }) {
             </View>
           ))}
         </ScrollView>
-        <TouchableOpacity style={styles.manageButton} onPress={toggleMenu}>
+        <TouchableOpacity 
+          style={styles.manageButton} 
+          onPress={() => navigation.navigate('ExpandedManageTasks')}
+        >
           <Text style={styles.manageButtonText}>Manage Tasks</Text>
         </TouchableOpacity>
       </View>
@@ -103,16 +94,6 @@ export default function HomeScreen({ navigation }) {
           <PieChart percentage={completedPercentage} />
         </TouchableOpacity>
       </View>
-
-      <Animated.View style={[
-        styles.slideMenu,
-        { transform: [{ translateX: slideAnim }] }
-      ]}>
-        <TouchableOpacity style={styles.backButton} onPress={toggleMenu}>
-          <Text style={styles.backButtonText}>&lt; Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.menuTitle}>Manage Tasks</Text>
-      </Animated.View>
     </View>
   );
 }
@@ -144,10 +125,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: 'white',
+    marginRight: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    baackgroundColor: 'transparent',
+  },
+  checkboxChecked: {
+    backgroundColor: '#transparent',
+  },
+  checkmark: {
+    width: 12,
+    height: 12,
+    backgroundColor: 'white',
+    borderRadius: 6,
+  },
   taskText: {
     color: 'white',
     fontSize: 16,
-    marginLeft: 10,
+    flex: 1,
   },
   completedTaskText: {
     textDecorationLine: 'line-through',
@@ -163,53 +164,6 @@ const styles = StyleSheet.create({
     color: '#3498db',
     fontWeight: 'bold',
     fontSize: 16,
-  },
-  slideMenu: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    width: '100%',
-    backgroundColor: '#222',
-    padding: 20,
-    paddingTop: 40,
-  },
-  backButton: {
-    position: 'absolute',
-    top: 20,
-    left: 20,
-  },
-  backButtonText: {
-    color: '#3498db',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  menuTitle: {
-    color: 'white',
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginTop: 10,
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  checkbox: {
-    width: 22,
-    height: 22,
-    borderWidth: 1,
-    borderColor: 'white',
-    borderRadius: 5,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  checkboxChecked: {
-    backgroundColor: '#4CAF50',
-    borderColor: '#4CAF50',
-  },
-  checkmark: {
-    width: 12,
-    height: 12,
-    backgroundColor: 'white',
-    borderRadius: 2,
   },
   squareCardContainer: {
     flexDirection: 'row',

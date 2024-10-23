@@ -5,23 +5,41 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { Provider } from 'react-redux';
 import store from './store';
-import { auth } from './firebaseConfig';  // Import the configured Firebase auth
-import { onAuthStateChanged } from 'firebase/auth';  // Import onAuthStateChanged
+import { auth } from './firebaseConfig';
+import { onAuthStateChanged } from 'firebase/auth';
 
 import HomeScreen from './home_tab/Home';
 import ExpandedProgress from './home_tab/ExpandedProgress';
+import ExpandedManageTasks from './home_tab/ExpandedManageTasks';
 import ProfileScreen from './profile_tab/Profile';
 import ChatScreen from './chat_tab/Chat';
-import SignInSignUpScreen from './profile_tab/SignInSignUp'; // Import the SignIn/SignUp screen
+import SignInSignUpScreen from './profile_tab/SignInSignUp';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
 function HomeStack() {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="HomeMain" component={HomeScreen} />
-      <Stack.Screen name="ExpandedProgress" component={ExpandedProgress} />
+    <Stack.Navigator
+      initialRouteName="HomeMain"
+      screenOptions={{
+        headerShown: false,
+        presentation: 'card',
+        animation: 'slide_from_right',
+      }}
+    >
+      <Stack.Screen 
+        name="HomeMain" 
+        component={HomeScreen} 
+      />
+      <Stack.Screen 
+        name="ExpandedProgress" 
+        component={ExpandedProgress} 
+      />
+      <Stack.Screen 
+        name="ExpandedManageTasks" 
+        component={ExpandedManageTasks}
+      />
     </Stack.Navigator>
   );
 }
@@ -36,10 +54,10 @@ export default function App() {
       if (initializing) setInitializing(false);
     });
 
-    return () => unsubscribe();  // Cleanup subscription on unmount
+    return () => unsubscribe();
   }, [initializing]);
 
-  if (initializing) return null;  // Optionally add a loading state here
+  if (initializing) return null;
 
   return (
     <Provider store={store}>
@@ -85,7 +103,6 @@ export default function App() {
             </Tab.Screen>
           </Tab.Navigator>
         ) : (
-          // If not authenticated, show the login/signup screen
           <Stack.Navigator screenOptions={{ headerShown: false }}>
             <Stack.Screen name="SignInSignUp" component={SignInSignUpScreen} />
           </Stack.Navigator>
