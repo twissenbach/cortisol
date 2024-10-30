@@ -144,3 +144,58 @@ export const updateTaskOrder = async (tasks) => {
     throw error;
   }
 };
+
+// Update daily completion rate
+export const updateDailyCompletionRate = async () => {
+  try {
+    const userDocRef = getUserDocRef();
+    const userDoc = await getDoc(userDocRef);
+    const tasks = userDoc.data().tasks;
+    
+    if (tasks.length === 0) return 0;
+    
+    const completedTasks = tasks.filter(task => task.completed).length;
+    const completionRate = (completedTasks / tasks.length) * 100;
+    
+    const today = new Date().toISOString().split('T')[0];
+    
+    await updateDoc(userDocRef, {
+      [`completionHistory.${today}`]: completionRate
+    });
+    
+    return completionRate;
+  } catch (error) {
+    console.error('Error updating completion rate:', error);
+    throw error;
+  }
+};
+
+// Get completion history
+export const getCompletionHistory = async () => {
+  try {
+    const userDocRef = getUserDocRef();
+    const userDoc = await getDoc(userDocRef);
+    const history = userDoc.data()?.completionHistory || {};
+    
+    // Convert to grid format
+    const today = new Date();
+    const gridData = [];
+    
+    // Create 13 weeks of data
+    for (let week = 0; week < 13; week++) {
+      const weekData = [];
+      for (let day = 0; day < 7; day++) {
+        const date = new Date(today);
+        date.setDate(date.getDate() - ((12 - week) * 7 + (6 - day)));
+        const dateKey = date.toISOString().split('T')[0];
+        weekData.push(history[dateKey] || null);
+      }
+      gridData.push(weekData);
+    }
+    
+    return gridData;
+  } catch (error) {
+    console.error('Error getting completion history:', error);
+    throw error;
+  }
+};
