@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -12,10 +12,12 @@ import DraggableFlatList, {
   ScaleDecorator,
 } from 'react-native-draggable-flatlist';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import AddTaskModal from './AddTaskModal';
 
 export default function ExpandedManageTasks({ navigation }) {
   const tasks = useSelector((state) => state.tasks);
   const dispatch = useDispatch();
+  const [isAddTaskModalVisible, setIsAddTaskModalVisible] = useState(false);
 
   const renderItem = ({ item, drag, isActive }) => {
     return (
@@ -70,14 +72,16 @@ export default function ExpandedManageTasks({ navigation }) {
 
       <TouchableOpacity 
         style={styles.addButton}
-        onPress={() => {
-          // Add new task action here
-          // navigation.navigate('AddTask')
-        }}
+        onPress={() => setIsAddTaskModalVisible(true)}
       >
         <Ionicons name="add" size={24} color="white" />
         <Text style={styles.addButtonText}>Add New Task</Text>
       </TouchableOpacity>
+
+      <AddTaskModal
+        visible={isAddTaskModalVisible}
+        onClose={() => setIsAddTaskModalVisible(false)}
+      />
     </GestureHandlerRootView>
   );
 }

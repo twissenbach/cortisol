@@ -1,4 +1,10 @@
-import { createStore } from 'redux';
+import { legacy_createStore as createStore } from 'redux';
+import { 
+  toggleTask as toggleTaskInFirebase,
+  updateTaskOrder as updateTaskOrderInFirebase,
+  deleteTask as deleteTaskInFirebase,
+  addTask as addTaskToFirebase,
+} from './firebaseServices';
 
 // Initial state
 const initialState = {
@@ -16,31 +22,78 @@ const TOGGLE_TASK = 'TOGGLE_TASK';
 const UPDATE_TASK_ORDER = 'UPDATE_TASK_ORDER';
 const DELETE_TASK = 'DELETE_TASK';
 const ADD_TASK = 'ADD_TASK';
+const SET_TASKS = 'SET_TASKS';
 
 // Action Creators
-export const toggleTask = (id) => ({
-  type: TOGGLE_TASK,
-  id,
-});
+export const toggleTask = (id) => {
+  return async (dispatch) => {
+    try {
+      await toggleTaskInFirebase(id);
+      dispatch({
+        type: TOGGLE_TASK,
+        id,
+      });
+    } catch (error) {
+      console.error('Error toggling task:', error);
+      // You might want to show an error message to the user here
+    }
+  };
+};
 
-export const updateTaskOrder = (tasks) => ({
-  type: UPDATE_TASK_ORDER,
+export const updateTaskOrder = (tasks) => {
+  return async (dispatch) => {
+    try {
+      await updateTaskOrderInFirebase(tasks);
+      dispatch({
+        type: UPDATE_TASK_ORDER,
+        payload: tasks,
+      });
+    } catch (error) {
+      console.error('Error updating task order:', error);
+    }
+  };
+};
+
+export const deleteTask = (id) => {
+  return async (dispatch) => {
+    try {
+      await deleteTaskInFirebase(id);
+      dispatch({
+        type: DELETE_TASK,
+        id,
+      });
+    } catch (error) {
+      console.error('Error deleting task:', error);
+    }
+  };
+};
+
+export const addTask = (taskData) => {
+  return async (dispatch) => {
+    try {
+      const newTask = await addTaskToFirebase(taskData);
+      dispatch({
+        type: ADD_TASK,
+        payload: newTask,
+      });
+    } catch (error) {
+      console.error('Error adding task:', error);
+    }
+  };
+};
+
+export const setTasks = (tasks) => ({
+  type: SET_TASKS,
   payload: tasks,
 });
 
-export const deleteTask = (id) => ({
-  type: DELETE_TASK,
-  id,
-});
-
-export const addTask = (title) => ({
-  type: ADD_TASK,
-  payload: {
-    id: Date.now().toString(), // Simple way to generate unique IDs
-    title,
-    completed: false,
-  },
-});
+// Middleware to handle async actions
+const thunkMiddleware = store => next => action => {
+  if (typeof action === 'function') {
+    return action(store.dispatch, store.getState);
+  }
+  return next(action);
+};
 
 // Reducer
 const tasksReducer = (state = initialState, action) => {
@@ -52,31 +105,57 @@ const tasksReducer = (state = initialState, action) => {
           task.id === action.id ? { ...task, completed: !task.completed } : task
         )
       };
-
+      
     case UPDATE_TASK_ORDER:
       return {
         ...state,
         tasks: action.payload
       };
-
+      
     case DELETE_TASK:
       return {
         ...state,
         tasks: state.tasks.filter(task => task.id !== action.id)
       };
-
+      
     case ADD_TASK:
       return {
         ...state,
         tasks: [...state.tasks, action.payload]
       };
-
+      
+    case SET_TASKS:
+      return {
+        ...state,
+        tasks: action.payload
+      };
+      
     default:
       return state;
   }
 };
 
-// Create store
-const store = createStore(tasksReducer);
+// Create store with middleware
+const createStoreWithMiddleware = (reducer) => {
+  const store = createStore((state, action) => {
+    // This wrapper helps catch any errors in the reducer
+    try {
+      return reducer(state, action);
+    } catch (error) {
+      console.error('Error in reducer:', error);
+      return state;
+    }
+  });
+
+  // Add middleware functionality
+  const dispatch = store.dispatch;
+  store.dispatch = action => {
+    return thunkMiddleware(store)(dispatch)(action);
+  };
+
+  return store;
+};
+
+const store = createStoreWithMiddleware(tasksReducer);
 
 export default store;

@@ -7,6 +7,9 @@ import { Provider } from 'react-redux';
 import store from './store';
 import { auth } from './firebaseConfig';
 import { onAuthStateChanged } from 'firebase/auth';
+import { View, ActivityIndicator } from 'react-native';
+import { getUserTasks, initializeUserData } from './firebaseServices';
+import { setTasks } from './store';
 
 import HomeScreen from './home_tab/Home';
 import ExpandedProgress from './home_tab/ExpandedProgress';
@@ -44,70 +47,131 @@ function HomeStack() {
   );
 }
 
-export default function App() {
+function LoadingScreen() {
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'black' }}>
+      <ActivityIndicator size="large" color="white" />
+    </View>
+  );
+}
+
+// Wrap the main app content with Redux Provider
+function AppContent() {
   const [user, setUser] = useState(null);
   const [initializing, setInitializing] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      if (initializing) setInitializing(false);
+    let isMounted = true;
+
+    const loadUserData = async (user) => {
+      if (user && isMounted) {
+        try {
+          await initializeUserData();
+          const userTasks = await getUserTasks();
+          store.dispatch(setTasks(userTasks));
+        } catch (error) {
+          console.error('Error loading user data:', error);
+        }
+      }
+    };
+
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (isMounted) {
+        setUser(user);
+        if (user) {
+          await loadUserData(user);
+        }
+        setInitializing(false);
+      }
     });
 
-    return () => unsubscribe();
-  }, [initializing]);
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
+  }, []);
 
-  if (initializing) return null;
+  if (initializing) {
+    return <LoadingScreen />;
+  }
 
   return (
-    <Provider store={store}>
-      <NavigationContainer theme={{
-        dark: true,
-        colors: {
-          primary: 'white',
-          background: 'black',
-          card: 'black',
-          text: 'white',
-          border: 'white',
-          notification: 'white',
-        },
-      }}>
-        {user ? (
-          <Tab.Navigator
-            screenOptions={({ route }) => ({
-              tabBarIcon: ({ focused, color, size }) => {
-                let iconName;
+    <NavigationContainer theme={{
+      dark: true,
+      colors: {
+        primary: 'white',
+        background: 'black',
+        card: 'black',
+        text: 'white',
+        border: 'white',
+        notification: 'white',
+      },
+    }}>
+      {user ? (
+        <Tab.Navigator
+          screenOptions={({ route }) => ({
+            tabBarIcon: ({ focused, color, size }) => {
+              let iconName;
 
-                if (route.name === 'Home') {
-                  iconName = focused ? 'home' : 'home-outline';
-                } else if (route.name === 'Profile') {
-                  iconName = focused ? 'person' : 'person-outline';
-                } else if (route.name === 'Chat') {
-                  iconName = focused ? 'chatbubble' : 'chatbubble-outline';
-                }
+              if (route.name === 'Home') {
+                iconName = focused ? 'home' : 'home-outline';
+              } else if (route.name === 'Profile') {
+                iconName = focused ? 'person' : 'person-outline';
+              } else if (route.name === 'Chat') {
+                iconName = focused ? 'chatbubble' : 'chatbubble-outline';
+              }
 
-                return <Ionicons name={iconName} size={size} color={color} />;
-              },
-              tabBarActiveTintColor: 'white',
-              tabBarInactiveTintColor: 'gray',
-              tabBarStyle: { backgroundColor: 'black', borderTopColor: '#333' },
-              headerStyle: { backgroundColor: 'black' },
-              headerTintColor: 'white',
-              headerTitleAlign: 'center',
-            })}
+              return <Ionicons name={iconName} size={size} color={color} />;
+            },
+            tabBarActiveTintColor: 'white',
+            tabBarInactiveTintColor: 'gray',
+            tabBarStyle: { 
+              backgroundColor: 'black', 
+              borderTopColor: '#333',
+              height: 60,
+              paddingBottom: 8,
+              paddingTop: 8,
+            },
+            headerStyle: { backgroundColor: 'black' },
+            headerTintColor: 'white',
+            headerTitleAlign: 'center',
+          })}
+        >
+          <Tab.Screen 
+            name="Chat" 
+            component={ChatScreen} 
+            options={{ 
+              title: 'Chat with AI', 
+              tabBarLabel: 'Chat' 
+            }} 
+          />
+          <Tab.Screen 
+            name="Home" 
+            component={HomeStack} 
+            options={{
+              headerShown: false
+            }}
+          />
+          <Tab.Screen 
+            name="Profile"
+            options={{ title: 'Profile' }}
           >
-            <Tab.Screen name="Chat" component={ChatScreen} options={{ title: 'Chat with AI', tabBarLabel: 'Chat' }} />
-            <Tab.Screen name="Home" component={HomeStack} />
-            <Tab.Screen name="Profile">
-              {(props) => <ProfileScreen {...props} user={user} />}
-            </Tab.Screen>
-          </Tab.Navigator>
-        ) : (
-          <Stack.Navigator screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="SignInSignUp" component={SignInSignUpScreen} />
-          </Stack.Navigator>
-        )}
-      </NavigationContainer>
+            {(props) => <ProfileScreen {...props} user={user} />}
+          </Tab.Screen>
+        </Tab.Navigator>
+      ) : (
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="SignInSignUp" component={SignInSignUpScreen} />
+        </Stack.Navigator>
+      )}
+    </NavigationContainer>
+  );
+}
+
+export default function App() {
+  return (
+    <Provider store={store}>
+      <AppContent />
     </Provider>
   );
 }
