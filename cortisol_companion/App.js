@@ -10,6 +10,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { View, ActivityIndicator } from 'react-native';
 import { getUserTasks, initializeUserData } from './firebaseServices';
 import { setTasks } from './store';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import HomeScreen from './home_tab/Home';
 import ExpandedProgress from './home_tab/ExpandedProgress';
@@ -96,75 +97,80 @@ function AppContent() {
   }
 
   return (
-    <NavigationContainer theme={{
-      dark: true,
-      colors: {
-        primary: 'white',
-        background: 'black',
-        card: 'black',
-        text: 'white',
-        border: 'white',
-        notification: 'white',
-      },
-    }}>
-      {user ? (
-        <Tab.Navigator
-          screenOptions={({ route }) => ({
-            tabBarIcon: ({ focused, color, size }) => {
-              let iconName;
+    <LinearGradient
+      colors={['#0000FF', '#00FFFF']}
+      style={{ flex: 1 }}
+    >
+      <NavigationContainer theme={{
+        dark: true,
+        colors: {
+          primary: 'white',
+          background: 'transparent', // used to be black
+          card: 'black',
+          text: 'white',
+          border: 'white',
+          notification: 'white',
+        },
+      }}>
+        {user ? (
+          <Tab.Navigator
+            screenOptions={({ route }) => ({
+              tabBarIcon: ({ focused, color, size }) => {
+                let iconName;
 
-              if (route.name === 'Home') {
-                iconName = focused ? 'home' : 'home-outline';
-              } else if (route.name === 'Profile') {
-                iconName = focused ? 'person' : 'person-outline';
-              } else if (route.name === 'Chat') {
-                iconName = focused ? 'chatbubble' : 'chatbubble-outline';
-              }
+                if (route.name === 'Home') {
+                  iconName = focused ? 'home' : 'home-outline';
+                } else if (route.name === 'Profile') {
+                  iconName = focused ? 'person' : 'person-outline';
+                } else if (route.name === 'Chat') {
+                  iconName = focused ? 'chatbubble' : 'chatbubble-outline';
+                }
 
-              return <Ionicons name={iconName} size={size} color={color} />;
-            },
-            tabBarActiveTintColor: 'white',
-            tabBarInactiveTintColor: 'gray',
-            tabBarStyle: { 
-              backgroundColor: 'black', 
-              borderTopColor: '#333',
-              height: 60,
-              paddingBottom: 8,
-              paddingTop: 8,
-            },
-            headerStyle: { backgroundColor: 'black' },
-            headerTintColor: 'white',
-            headerTitleAlign: 'center',
-          })}
-        >
-          <Tab.Screen 
-            name="Chat" 
-            component={ChatScreen} 
-            options={{ 
-              title: 'Chat with AI', 
-              tabBarLabel: 'Chat' 
-            }} 
-          />
-          <Tab.Screen 
-            name="Home" 
-            component={HomeStack} 
-            options={{
-              headerShown: false
-            }}
-          />
-          <Tab.Screen 
-            name="Profile"
-            options={{ title: 'Profile' }}
+                return <Ionicons name={iconName} size={size} color={color} />;
+              },
+              tabBarActiveTintColor: 'white',
+              tabBarInactiveTintColor: 'gray',
+              tabBarStyle: { 
+                backgroundColor: 'black', 
+                borderTopColor: '#333',
+                height: 60,
+                paddingBottom: 8,
+                paddingTop: 8,
+              },
+              headerStyle: { backgroundColor: 'black' },
+              headerTintColor: 'white',
+              headerTitleAlign: 'center',
+            })}
           >
-            {(props) => <ProfileScreen {...props} user={user} />}
-          </Tab.Screen>
-        </Tab.Navigator>
-      ) : (
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="SignInSignUp" component={SignInSignUpScreen} />
-        </Stack.Navigator>
-      )}
-    </NavigationContainer>
+            <Tab.Screen 
+              name="Chat" 
+              component={ChatScreen} 
+              options={{ 
+                title: 'Chat with AI', 
+                tabBarLabel: 'Chat' 
+              }} 
+            />
+            <Tab.Screen 
+              name="Home" 
+              component={HomeStack} 
+              options={{
+                headerShown: false
+              }}
+            />
+            <Tab.Screen 
+              name="Profile"
+              options={{ title: 'Profile' }}
+            >
+              {(props) => <ProfileScreen {...props} user={user} />}
+            </Tab.Screen>
+          </Tab.Navigator>
+        ) : (
+          <Stack.Navigator screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="SignInSignUp" component={SignInSignUpScreen} />
+          </Stack.Navigator>
+        )}
+      </NavigationContainer>
+    </LinearGradient>
   );
 }
 

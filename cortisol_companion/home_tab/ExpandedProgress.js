@@ -82,7 +82,7 @@ const CompletionGrid = ({ completionData }) => {
       {/* Day labels */}
       <View style={styles.dayLabels}>
         {['Mon', 'Wed', 'Fri'].map((day, i) => (
-          <Text key={day} style={[styles.dayLabel, { top: (i * (boxSize + boxMargin) * 2) }]}>
+          <Text key={day} style={[styles.dayLabel, { top: ((i + 1.2) * (boxSize + boxMargin) * 2) }]}>
             {day}
           </Text>
         ))}

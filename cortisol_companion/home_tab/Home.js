@@ -89,7 +89,7 @@ export default function HomeScreen({ navigation }) {
       <View style={styles.squareCardContainer}>
         <View style={styles.squareCard}>
           <Text style={styles.squareCardTitle}>Streak</Text>
-          <Text style={styles.squareCardContent}>7 Days</Text>
+          <Text style={styles.squareCardContent}>0 Days</Text>
         </View>
         <TouchableOpacity 
           style={styles.squareCard}
@@ -106,7 +106,7 @@ export default function HomeScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'black',
+    backgroundColor: 'transparent',
     paddingTop: 40,
   },
   tileContainer: {
