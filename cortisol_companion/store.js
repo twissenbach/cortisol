@@ -35,7 +35,6 @@ export const toggleTask = (id) => {
       });
     } catch (error) {
       console.error('Error toggling task:', error);
-      // You might want to show an error message to the user here
     }
   };
 };
@@ -138,7 +137,6 @@ const tasksReducer = (state = initialState, action) => {
 // Create store with middleware
 const createStoreWithMiddleware = (reducer) => {
   const store = createStore((state, action) => {
-    // This wrapper helps catch any errors in the reducer
     try {
       return reducer(state, action);
     } catch (error) {
@@ -147,7 +145,6 @@ const createStoreWithMiddleware = (reducer) => {
     }
   });
 
-  // Add middleware functionality
   const dispatch = store.dispatch;
   store.dispatch = action => {
     return thunkMiddleware(store)(dispatch)(action);

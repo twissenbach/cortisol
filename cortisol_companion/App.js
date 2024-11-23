@@ -15,6 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import HomeScreen from './home_tab/Home';
 import ExpandedProgress from './home_tab/ExpandedProgress';
 import ExpandedManageTasks from './home_tab/ExpandedManageTasks';
+import ExpandedSteps from './home_tab/ExpandedSteps';
 import ProfileScreen from './profile_tab/Profile';
 import ChatScreen from './chat_tab/Chat';
 import SignInSignUpScreen from './profile_tab/SignInSignUp';
@@ -43,6 +44,10 @@ function HomeStack() {
       <Stack.Screen 
         name="ExpandedManageTasks" 
         component={ExpandedManageTasks}
+      />
+      <Stack.Screen 
+        name="ExpandedSteps" 
+        component={ExpandedSteps}
       />
     </Stack.Navigator>
   );

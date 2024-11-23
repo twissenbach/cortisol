@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { Svg, Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
@@ -46,19 +46,27 @@ const PieChart = ({ percentage }) => {
 export default function HomeScreen({ navigation }) {
   const tasks = useSelector((state) => state.tasks);
   const dispatch = useDispatch();
-  
-  // Sort tasks so completed ones are at the bottom
+  const [goal, setGoal] = useState(8000); // Back to local state
+  const steps = 2576; // Hardcoded steps
+
   const sortedTasks = [...tasks].sort((a, b) => {
-    // First, move completed tasks to the bottom
     if (a.completed !== b.completed) {
       return a.completed ? 1 : -1;
     }
-    // For tasks with the same completion status, maintain their order
-    // This assumes tasks array maintains the order from ExpandedManageTasks
     return 0;
   });
-  
+
+  useEffect(() => {
+    if (navigation?.getState()?.routes) {
+      const route = navigation.getState().routes[navigation.getState().routes.length - 1];
+      if (route.params?.updatedGoal) {
+        setGoal(route.params.updatedGoal);
+      }
+    }
+  }, [navigation]);
+
   const completedPercentage = (tasks.filter(task => task.completed).length / tasks.length) * 100;
+  const progressPercentage = (steps / goal) * 100;
 
   return (
     <View style={styles.container}>
@@ -87,10 +95,16 @@ export default function HomeScreen({ navigation }) {
       </View>
       
       <View style={styles.squareCardContainer}>
-        <View style={styles.squareCard}>
-          <Text style={styles.squareCardTitle}>Streak</Text>
-          <Text style={styles.squareCardContent}>0 Days</Text>
-        </View>
+        <TouchableOpacity
+          style={styles.squareCard}
+          onPress={() => navigation.navigate('ExpandedSteps', { initialGoal: goal })}
+        >
+          <Text style={styles.squareCardTitle}>Steps</Text>
+          <View style={styles.progressBarContainer}>
+            <View style={[styles.progressBar, { width: `${progressPercentage}%` }]} />
+            <Text style={styles.stepsText}>{steps}/{goal}</Text>
+          </View>
+        </TouchableOpacity>
         <TouchableOpacity 
           style={styles.squareCard}
           onPress={() => navigation.navigate('ExpandedProgress', { percentage: completedPercentage })}
@@ -191,9 +205,27 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 10,
   },
-  squareCardContent: {
+  progressBarContainer: {
+    width: '100%',
+    height: 20,
+    backgroundColor: 'red',
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+    position: 'relative',
+    marginTop: 10,
+  },
+  progressBar: {
+    height: '100%',
+    backgroundColor: 'green',
+    position: 'absolute',
+    left: 0,
+  },
+  stepsText: {
     color: 'white',
-    fontSize: 24,
+    fontSize: 12,
     fontWeight: 'bold',
+    zIndex: 1,
   },
 });
